@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/docker/distribution/configuration"
-	"github.com/fleetdm/fleet/server/config"
 	"github.com/fleetdm/fleet/server/kolide"
 	"github.com/gomodule/redigo/redis"
 	"github.com/pkg/errors"

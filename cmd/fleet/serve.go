@@ -215,8 +215,8 @@ the way that the Fleet server works.
 				}
 			}
 
-			redisPool := pubsub.NewRedisPool(config.Redis.Address, config.Redis.Password, config.Redis.Database, config.Redis.UseTLS, config.Redis.DuplicateResults)
-			resultStore := pubsub.NewRedisQueryResults(redisPool, true)
+			redisPool := pubsub.NewRedisPool(config.Redis.Address, config.Redis.Password, config.Redis.Database, config.Redis.UseTLS)
+			resultStore := pubsub.NewRedisQueryResults(redisPool, config.Redis.DuplicateResults)
 			liveQueryStore := live_query.NewRedisLiveQuery(redisPool)
 			ssoSessionStore := sso.NewSessionStore(redisPool)
 

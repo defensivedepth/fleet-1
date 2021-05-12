@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/gomodule/redigo/redis"
 	"github.com/fleetdm/fleet/server/kolide"
+	"github.com/gomodule/redigo/redis"
 	"github.com/pkg/errors"
 )
 
@@ -69,6 +69,11 @@ func (r *redisQueryResults) WriteResult(result kolide.DistributedQueryResult) er
 	}
 
 	n, err := redis.Int(conn.Do("PUBLISH", channelName, string(jsonVal)))
+
+	if n != 0 && DuplicateResults {
+		redis.Int(conn.Do("PUBLISH", "LQDuplicate", string(jsonVal)))
+	}
+
 	if err != nil {
 		return errors.Wrap(err, "PUBLISH failed to channel "+channelName)
 	}

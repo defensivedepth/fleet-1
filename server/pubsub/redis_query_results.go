@@ -16,7 +16,7 @@ import (
 type redisQueryResults struct {
 	// connection pool
 	pool             *redis.Pool
-	duplicateResults config.RedisConfig
+	duplicateResults bool
 }
 
 var _ kolide.QueryResultStore = &redisQueryResults{}
@@ -53,7 +53,7 @@ func NewRedisPool(server, password string, database int, useTLS bool) *redis.Poo
 // NewRedisQueryResults creats a new Redis implementation of the
 // QueryResultStore interface using the provided Redis connection pool.
 func NewRedisQueryResults(pool *redis.Pool, duplicateResults bool) *redisQueryResults {
-	return &redisQueryResults{pool: pool, duplicateResults: duplicateResults.DuplicateResults}
+	return &redisQueryResults{pool: pool, duplicateResults: duplicateResults}
 }
 
 func pubSubForID(id uint) string {

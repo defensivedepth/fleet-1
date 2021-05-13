@@ -11,6 +11,7 @@ import Spinner from "components/loaders/Spinner";
 import Button from "components/buttons/Button";
 import Modal from "components/modals/Modal";
 import SoftwareListRow from "pages/hosts/HostDetailsPage/SoftwareListRow";
+import PackQueriesListRow from "pages/hosts/HostDetailsPage/PackQueriesListRow";
 
 import entityGetter from "redux/utilities/entityGetter";
 import queryActions from "redux/nodes/entities/queries/actions";
@@ -18,6 +19,13 @@ import queryInterface from "interfaces/query";
 import { renderFlash } from "redux/nodes/notifications/actions";
 import { push } from "react-router-redux";
 import PATHS from "router/paths";
+import {
+  Accordion,
+  AccordionItem,
+  AccordionItemHeading,
+  AccordionItemButton,
+  AccordionItemPanel,
+} from "react-accessible-accordion";
 
 import hostInterface from "interfaces/host";
 import {
@@ -26,6 +34,7 @@ import {
   humanHostEnrolled,
   humanHostMemory,
   humanHostDetailUpdated,
+  secondsToHms,
 } from "kolide/helpers";
 import helpers from "./helpers";
 import SelectQueryModal from "./SelectQueryModal";
@@ -234,31 +243,63 @@ export class HostDetailsPage extends Component {
   };
 
   renderPacks = () => {
-    const { onPackClick } = this;
     const { host } = this.props;
-    const { packs = [] } = host;
+    const { pack_stats } = host;
+    const wrapperClassName = `${baseClass}__table`;
 
-    const packItems = packs.map((pack) => {
-      return (
-        <li className="list__item" key={pack.id}>
-          <Button
-            onClick={() => onPackClick(pack)}
-            variant="text-link"
-            className="list__button"
-          >
-            {pack.name}
-          </Button>
-        </li>
-      );
-    });
+    let packsAccordion;
+    if (pack_stats) {
+      packsAccordion = pack_stats.map((pack) => {
+        return (
+          <AccordionItem key={pack.pack_id}>
+            <AccordionItemHeading>
+              <AccordionItemButton>{pack.pack_name}</AccordionItemButton>
+            </AccordionItemHeading>
+            <AccordionItemPanel>
+              {pack.query_stats.length === 0 ? (
+                <div>There are no schedule queries for this pack.</div>
+              ) : (
+                <div className={`${baseClass}__wrapper`}>
+                  <table className={wrapperClassName}>
+                    <thead>
+                      <tr>
+                        <th>Query Name</th>
+                        <th>Description</th>
+                        <th>Frequency</th>
+                        <th>Last Run</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {!!pack.query_stats.length &&
+                        pack.query_stats.map((query) => {
+                          return (
+                            <PackQueriesListRow
+                              key={`pack-row-${query.pack_id}-${query.scheduled_query_id}`}
+                              query={query}
+                            />
+                          );
+                        })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </AccordionItemPanel>
+          </AccordionItem>
+        );
+      });
+    }
 
     return (
       <div className="section section--packs">
         <p className="section__header">Packs</p>
-        {packs.length === 0 ? (
-          <p className="info__item">No packs have this host as a target.</p>
+        {!pack_stats ? (
+          <p className="info__item">
+            No packs with scheduled queries have this host as a target.
+          </p>
         ) : (
-          <ul className="list">{packItems}</ul>
+          <Accordion allowMultipleExpanded="true" allowZeroExpanded="true">
+            {packsAccordion}
+          </Accordion>
         )}
       </div>
     );
@@ -271,7 +312,7 @@ export class HostDetailsPage extends Component {
     return (
       <div className="section section--software">
         <p className="section__header">Software</p>
-        {host.software.length === 0 ? (
+        {!host.software ? (
           <div className="results">
             <p className="results__header">
               No installed software detected on this host.
@@ -352,7 +393,7 @@ export class HostDetailsPage extends Component {
           key === "config_tls_refresh" ||
           key === "distributed_interval"
         ) {
-          object[key] = `${object[key]} sec`;
+          object[key] = secondsToHms(object[key]);
         }
       });
     });
@@ -462,7 +503,7 @@ export class HostDetailsPage extends Component {
         </div>
         {renderLabels()}
         {renderPacks()}
-        {host.software && renderSoftware()}
+        {renderSoftware()}
         {renderDeleteHostModal()}
         {showQueryHostModal && (
           <SelectQueryModal
